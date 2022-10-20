@@ -1,0 +1,7 @@
+3
+1
+server1.lostrpg.org
+2
+server2.lostrpg.org
+3
+server3.lostrpg.org
