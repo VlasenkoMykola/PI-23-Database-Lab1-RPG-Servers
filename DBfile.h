@@ -21,6 +21,11 @@ private:
 	int newid;
 	//db_object* DBArray;
 	std::vector<db_object> DBArray;
+	int master_connected_id_index;
+	dbfile* master_dbfile;
+
+	std::vector<dbfile*> slave_dbfiles;
+	//	std::vector<dbfile> connected_dbfiles;
 public:
 	dbfile(string fileprefix, string table,
 	       int numIntFields, const char** IntFieldsNames,
@@ -39,5 +44,14 @@ public:
 	string DBMenu();
 	void DBApp();
 	void PrintFromAnotherTable(dbfile secondtable);
-	void DeleteFromAnotherTable(dbfile secondtable);
+	void InsertSlaveDBFile(dbfile* secondtable);
+	void SetMasterDBFile(dbfile* secondtable, int connected_id_index);
+	void PrintSlaveDBFiles();
+	void PrintMasterDBFile();
+	void Print_Master_Intfields_at_connected_index();
+	void DeleteWhileAffectingMaster();
+	void Delete_if_matching_id(int ID_to_delete, int intfield_index);
+	void Delete_from_master();
+	void Delete_from_master_part2(dbfile master);
+	void DeleteWhileAffectingMaster_part2(dbfile master, int ID_to_delete, int intfield_index);
 };

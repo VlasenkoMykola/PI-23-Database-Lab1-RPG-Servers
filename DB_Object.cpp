@@ -170,3 +170,21 @@ int db_object::MatchExample(db_object db_objectS) {
 	return 1;
 
 }
+
+//for debugging
+void db_object::Print_intfield(int index) {
+	if (ID != 0) {
+		cout << "ID: " << ID << endl;
+		cout << intfieldname[index] << " " << intfield[index] << endl;
+		cout << "************************" << endl;
+	}
+}
+
+bool db_object::Check_if_intfield_matches(int value_to_check,int intfield_index) {
+	if (intfield[intfield_index] == value_to_check) {
+		return 1;
+	}
+	else {
+		return 0;
+	}
+}

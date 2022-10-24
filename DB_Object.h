@@ -31,4 +31,6 @@ public:
 	void ReadSTDIN(int Id);
 	void ReadSearchExample();
 	int MatchExample(db_object example);
+	void Print_intfield(int index);
+	bool Check_if_intfield_matches(int value_to_check, int intfield_index);
 };
