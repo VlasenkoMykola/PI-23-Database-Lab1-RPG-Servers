@@ -1,9 +1,13 @@
-2
 3
+1
 Testman
 testman@gmail.com
-password123
-4
+passwordtest
+2
 Player2
 player2@gmail.com
-randompassword
+password
+3
+Player3
+player3@gmail.com
+password

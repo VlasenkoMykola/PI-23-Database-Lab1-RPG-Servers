@@ -9,6 +9,13 @@
 using namespace std;
 
 class dbfile {
+
+	struct primary_key_link
+	{
+		dbfile* db;
+		int id_index;
+	};
+
 private:
 	string txtdbfilename;
 	string bindbfilename;
@@ -21,11 +28,10 @@ private:
 	int newid;
 	//db_object* DBArray;
 	std::vector<db_object> DBArray;
-	int master_connected_id_index;
-	dbfile* master_dbfile;
 
-	std::vector<dbfile*> slave_dbfiles;
-	//	std::vector<dbfile> connected_dbfiles;
+	std::vector<primary_key_link> slave_dbfiles;
+	std::vector<primary_key_link> master_dbfiles;
+
 public:
 	dbfile(string fileprefix, string table,
 	       int numIntFields, const char** IntFieldsNames,
@@ -37,21 +43,15 @@ public:
 	void ReadTxt();
 	void Write();
 	void WriteTxt();
-	void Delete();
 	void Edit();
 	void Add();
 	int Search();
 	string DBMenu();
 	void DBApp();
-	void PrintFromAnotherTable(dbfile secondtable);
-	void InsertSlaveDBFile(dbfile* secondtable);
-	void SetMasterDBFile(dbfile* secondtable, int connected_id_index);
+	void SetMasterForDBFile(dbfile* secondtable, int connected_id_index);
 	void PrintSlaveDBFiles();
-	void PrintMasterDBFile();
-	void Print_Master_Intfields_at_connected_index();
-	void DeleteWhileAffectingMaster();
+	void Delete();
+	void RawDelete(int idDel);
+	void DeleteWhileAffectingSlaves();
 	void Delete_if_matching_id(int ID_to_delete, int intfield_index);
-	void Delete_from_master();
-	void Delete_from_master_part2(dbfile master);
-	void DeleteWhileAffectingMaster_part2(dbfile master, int ID_to_delete, int intfield_index);
 };

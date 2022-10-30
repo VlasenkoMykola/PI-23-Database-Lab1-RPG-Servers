@@ -11,11 +11,8 @@ int main() {
 	dbfile DBPlayers = dbfile("Players","Players", 0, NULL, 3, players);
 	dbfile DBServers = dbfile("Servers","Servers", 0, NULL, 1, servers);
 	dbfile DBSessions = dbfile("Sessions", "Sessions", 2, sessions, 0, NULL);
-	//pointers to previous dbfile variables
-    DBSessions.InsertSlaveDBFile(&DBPlayers);
-	DBSessions.InsertSlaveDBFile(&DBServers);
-	DBPlayers.SetMasterDBFile(&DBSessions,0);
-	DBServers.SetMasterDBFile(&DBSessions,1);
+	DBPlayers.SetMasterForDBFile(&DBSessions,0);
+	DBServers.SetMasterForDBFile(&DBSessions,1);
 
 	string stateM;
 	do {
@@ -33,8 +30,6 @@ int main() {
 			DBPlayers.DBApp();
 		}
 		else if (stateM == "2") {
-//			DBServers.PrintFromAnotherTable(DBPlayers);
-//			pause();
 			DBServers.DBApp();
 		}
 		else if (stateM == "3") {

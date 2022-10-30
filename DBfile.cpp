@@ -13,7 +13,6 @@ dbfile::dbfile(
 	intfieldnames = IntFieldsNames;
 	num_strfields = numStrFields;
 	strfieldnames = StrFieldsNames;
-	master_dbfile = nullptr;
 	newid = 1;
 //	ReadTxt();
 	Read();
@@ -34,7 +33,6 @@ void dbfile::Read() {
 	if (fin.is_open()) {
 		fin.read((char *) &dbcount, sizeof(int));
 		DBArray.resize(dbcount);
-		//DBArray = new db_object[dbcount];
 		for (int i = 0; i < dbcount; i++) {
 			DBArray[i].Init(num_intfields, intfieldnames, num_strfields, strfieldnames);
 			DBArray[i].ReadFromDB(fin);
@@ -56,7 +54,6 @@ void dbfile::ReadTxt() {
 	if (fin.is_open()) {
 		fin >> dbcount;
 		DBArray.resize(dbcount);
-		//DBArray = new db_object[dbcount];
 		for (int i = 0; i < dbcount; i++) {
 			DBArray[i].Init(num_intfields, intfieldnames, num_strfields, strfieldnames);
 			DBArray[i].ReadFromTxtDB(fin);
@@ -122,11 +119,7 @@ int dbfile::Search() {
 	return found;
 }
 
-void dbfile::Delete() {
-	int idDel;
-	cout << "Type in the ID of the table row you want to delete: ";
-	cin >> idDel;
-
+void dbfile::RawDelete(int idDel) {
 	int i;
 	for (i=0; i<dbcount; i++) {
 	    if (DBArray[i].GetID() == idDel) {
@@ -140,6 +133,14 @@ void dbfile::Delete() {
 	Write();
 	WriteTxt();
 }
+
+void dbfile::Delete() {
+	int idDel;
+	cout << "Type in the ID of the table row you want to delete: ";
+	cin >> idDel;
+	RawDelete(idDel);
+}
+
 
 void dbfile::Edit() {
 	int id;
@@ -157,20 +158,11 @@ void dbfile::Edit() {
 }
 
 void dbfile::Add() {
-	/*
-	db_object* DBArray1 = new db_object[dbcount+1];
-	int i;
-	for (i=0; i<dbcount; i++) {
-	    DBArray1[i] = DBArray[i];
-	}
-	*/
 	dbcount++;
 	DBArray.resize(dbcount);
 	DBArray[dbcount-1].Init(num_intfields, intfieldnames, num_strfields, strfieldnames);
 	DBArray[dbcount-1].ReadSTDIN(newid);
 	newid++;
-	//delete(DBArray);
-	//DBArray = DBArray1;
 
 	Write();
 	WriteTxt();
@@ -190,7 +182,6 @@ string dbfile::DBMenu() {
 		<< "(7) Write to Binary DB file\n"
 		<< "(8) Export to Text file\n"
 		<< "(9) Print Slave Tables\n"
-		<< "(10) Print Master Tables\n"
 		<< "Type a number from 0 to 9 to continue: ";
 	cin >> stateM;
 	cls();
@@ -208,8 +199,7 @@ void dbfile::DBApp() {
 		}
 		else if (stateM == "2") {
 //			Delete();
-//			Delete_from_master();
-			DeleteWhileAffectingMaster();
+			DeleteWhileAffectingSlaves();
 			pause();
 		}
 		else if (stateM == "3") {
@@ -241,13 +231,9 @@ void dbfile::DBApp() {
 			PrintSlaveDBFiles();
 			pause();
 		}
-		else if (stateM == "10") {
-			PrintMasterDBFile();
-			pause();
-		}
 		else if (stateM != "0") {
 			cout << "************************\n"
-			     << "ERROR: incorrect option. Should be a number from 0 to 7\n"
+			     << "ERROR: incorrect option. Should be a number from 0 to 9\n"
 			     << "************************\n";
 
 		}
@@ -255,86 +241,33 @@ void dbfile::DBApp() {
 	} while (stateM != "0");
 }
 
-void dbfile::PrintFromAnotherTable(dbfile secondtable) {
-	secondtable.Print();
-}
+void dbfile::SetMasterForDBFile(dbfile* secondtable,int connected_id_index) {
+	slave_dbfiles.push_back({secondtable, connected_id_index});
 
-void dbfile::InsertSlaveDBFile(dbfile* secondtable) {
-	slave_dbfiles.push_back(secondtable);
-}
-
-void dbfile::SetMasterDBFile(dbfile* secondtable,int connected_id_index) {
-	master_dbfile = secondtable;
-	master_connected_id_index = connected_id_index;//for playerid or serverid
 }
 
 void dbfile::PrintSlaveDBFiles() {
-	for (int i = 0; i < slave_dbfiles.size(); i++)
+	for (primary_key_link slave : slave_dbfiles)
 	{
-		PrintFromAnotherTable(*slave_dbfiles[i]);
+		cout << "Slave table:" << slave.db->tablename << "[" << slave.id_index << "]" << endl;
+		slave.db->Print();
 	}
 }
 
-void dbfile::PrintMasterDBFile() {
-//	PrintFromAnotherTable(*master_dbfile);
-	dbfile tmp_master = *master_dbfile;
-	tmp_master.Print();
-}
-
-
-void dbfile::Print_Master_Intfields_at_connected_index() {
-//	*master_dbfile->DBArray.Print();
-//	for (int i = 0; i < dbcount; i++) {
-//		DBArray[i].Print();
-//	}
-
-//	for (int i = 0; i < dbcount; i++) {
-//		DBArray[i].Print();
-//	}
-}
-
-void dbfile::DeleteWhileAffectingMaster() {
-
-//	PrintMasterDBFile();
+void dbfile::DeleteWhileAffectingSlaves() {
 
 	int idDel;
 	cout << "Type in the ID of the table row you want to delete: ";
 	cin >> idDel;
 
-	int i;
-	for (i = 0; i < dbcount; i++) {
-		if (DBArray[i].GetID() == idDel) {
-			DBArray[i] = DBArray[dbcount - 1];
-			dbcount--;
-			DBArray.resize(dbcount);
+	RawDelete(idDel);
 
-		}
+	for (primary_key_link slave : slave_dbfiles)
+	{
+		cout << "Deleting from Slave table: " << slave.db->tablename << "[" << slave.id_index << "]" << endl;
+		slave.db->Delete_if_matching_id(idDel, slave.id_index);
+		//slave.db->Print();
 	}
-
-	Write();
-	WriteTxt();
-
-	if (master_dbfile != nullptr) {
-		DeleteWhileAffectingMaster_part2(*master_dbfile, idDel, master_connected_id_index);
-//		PrintMasterDBFile();
-	}
-}
-
-//todo: add to header
-void dbfile::Delete_from_master() {
-//	dbfile tmp_master = *master_dbfile;
-//	tmp_master.Delete_if_matching_id(0, master_connected_id_index);
-	Delete_from_master_part2(*master_dbfile);
-}
-
-void dbfile::DeleteWhileAffectingMaster_part2(dbfile master, int ID_to_delete, int intfield_index) {
-	master.Delete_if_matching_id(ID_to_delete, intfield_index);
-}
-
-void dbfile::Delete_from_master_part2(dbfile master) {
-	//	dbfile tmp_master = *master_dbfile;
-	//	tmp_master.Delete_if_matching_id(0, master_connected_id_index);
-	master.Delete();
 }
 
 void dbfile::Delete_if_matching_id(int ID_to_delete,int intfield_index) {
@@ -343,9 +276,8 @@ void dbfile::Delete_if_matching_id(int ID_to_delete,int intfield_index) {
 	int i;
 	bool intfield_matches;
 	for (i = 0; i < dbcount; i++) {
-		intfield_matches = DBArray[i].Check_if_intfield_matches(ID_to_delete, intfield_index);
-		cout << intfield_matches << endl;
-		if (intfield_matches = 1) {
+		while(DBArray[i].Check_if_intfield_matches(ID_to_delete, intfield_index))
+		{
 			DBArray[i] = DBArray[dbcount - 1];
 			dbcount--;
 			DBArray.resize(dbcount);
